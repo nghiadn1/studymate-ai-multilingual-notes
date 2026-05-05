@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyMate AI – Smart Lecture Note Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* Minimal "Notion-like" markdown styling without plugins */
+        #output h1 {
+            font-size: 1.5rem;
+            line-height: 2rem;
+            font-weight: 700;
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        #output h2 {
+            font-size: 1.25rem;
+            line-height: 1.75rem;
+            font-weight: 700;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        #output p {
+            margin: 0.5rem 0;
+            line-height: 1.75;
+        }
+        #output ul, #output ol {
+            margin: 0.5rem 0 0.5rem 1.25rem;
+        }
+        #output li {
+            margin: 0.25rem 0;
+        }
+        #output pre {
+            background: #0b1020;
+            color: #e5e7eb;
+            padding: 0.9rem 1rem;
+            border-radius: 0.75rem;
+            overflow: auto;
+            margin: 0.75rem 0;
+        }
+        #output code {
+            background: rgba(15, 23, 42, 0.06);
+            padding: 0.15rem 0.35rem;
+            border-radius: 0.35rem;
+        }
+        #output pre code {
+            background: transparent;
+            padding: 0;
+        }
+        #output blockquote {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 0.75rem;
+            color: #475569;
+            margin: 0.75rem 0;
+        }
+        #output hr {
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <main class="mx-auto max-w-3xl p-6">
+        <div class="bg-white rounded-2xl shadow-md p-6">
+            <header class="mb-6">
+                <div class="mb-3">
+                    <span class="text-xs bg-gray-100 px-3 py-1 rounded-full">
+                        Powered by VALSEA API
+                    </span>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900">Paste Lecture Transcript</h1>
+                <p class="mt-2 text-sm text-gray-500">Supports multilingual speech (Vietnamese + English, code-switching)</p>
+            </header>
+
+            <section class="mb-6">
+                <label for="lectureInput" class="block text-sm font-semibold text-gray-700 mb-2">Transcript</label>
+                <textarea id="lectureInput" placeholder="Paste your transcript here (Vietnamese + English mixed)..."
+                    class="w-full h-56 p-4 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+
+                <div class="mt-4">
+                    <div class="grid grid-cols-3 gap-3 mb-2">
+                        <div class="lang-card active bg-blue-600 text-white shadow-md border border-gray-200 rounded-xl p-3 text-center cursor-pointer transition hover:shadow-md hover:scale-105" data-lang="Vietnamese">
+                            <div class="text-3xl">🇻🇳</div>
+                            <div class="text-sm font-medium mt-1">Vietnamese</div>
+                        </div>
+
+                        <div class="lang-card bg-white border border-gray-200 rounded-xl p-3 text-center cursor-pointer transition hover:shadow-md hover:scale-105" data-lang="English">
+                            <div class="text-3xl">🇺🇸</div>
+                            <div class="text-sm font-medium mt-1">English</div>
+                        </div>
+
+                        <div class="lang-card bg-white border border-gray-200 rounded-xl p-3 text-center cursor-pointer transition hover:shadow-md hover:scale-105" data-lang="Japanese">
+                            <div class="text-3xl">🇯🇵</div>
+                            <div class="text-sm font-medium mt-1">Japanese</div>
+                        </div>
+
+                        <div class="lang-card bg-white border border-gray-200 rounded-xl p-3 text-center cursor-pointer transition hover:shadow-md hover:scale-105" data-lang="Chinese">
+                            <div class="text-3xl">🇨🇳</div>
+                            <div class="text-sm font-medium mt-1">Chinese</div>
+                        </div>
+
+                        <div class="lang-card bg-white border border-gray-200 rounded-xl p-3 text-center cursor-pointer transition hover:shadow-md hover:scale-105" data-lang="French">
+                            <div class="text-3xl">🇫🇷</div>
+                            <div class="text-sm font-medium mt-1">French</div>
+                        </div>
+
+                        <div class="lang-card bg-white border border-gray-200 rounded-xl p-3 text-center cursor-pointer transition hover:shadow-md hover:scale-105" data-lang="German">
+                            <div class="text-3xl">🇩🇪</div>
+                            <div class="text-sm font-medium mt-1">German</div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 text-center mt-1">Tap a language to generate notes</p>
+                </div>
+
+                <div class="mt-4 flex flex-wrap items-center gap-3">
+                    <button id="generateBtn"
+                        class="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-2xl transition duration-200">
+                        Generate Notes
+                    </button>
+                    <button id="sampleBtn"
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-2xl transition duration-200">
+                        Try Sample Input
+                    </button>
+                    <button id="copyBtn"
+                        class="bg-gray-900 hover:bg-black disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-2xl transition duration-200"
+                        disabled>
+                        Copy Notes
+                    </button>
+                    <button id="clearBtn"
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 px-6 rounded-2xl transition duration-200">
+                        Clear
+                    </button>
+                </div>
+                <p id="status" class="text-sm text-gray-500 mt-2"></p>
+                <p id="langInfo" class="text-sm text-gray-500 mt-2"></p>
+            </section>
+
+            <section class="pt-2">
+                <div id="fallbackWarning" class="hidden mb-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                    ⚠️ Using fallback demo data
+                </div>
+                <div id="output" class="prose prose-lg max-w-none"></div>
+            </section>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
