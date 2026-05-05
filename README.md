@@ -134,5 +134,5 @@ npm run dev
 
 ### Author 👤
 
-- **Your Name** — hackathon project builder
+- **Le Dinh Nghia** — hackathon project builder
 
